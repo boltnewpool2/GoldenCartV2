@@ -1,12 +1,14 @@
-import { Calendar, Users, Gift, CheckCircle } from 'lucide-react';
+import { Calendar, Users, Gift, CheckCircle, Play } from 'lucide-react';
 import { RaffleWeek } from '../types/raffle';
 import { CountdownTimer } from './CountdownTimer';
 
 interface RaffleCardProps {
   raffle: RaffleWeek;
+  onStartDraw?: () => void;
+  canDraw?: boolean;
 }
 
-export function RaffleCard({ raffle }: RaffleCardProps) {
+export function RaffleCard({ raffle, onStartDraw, canDraw = false }: RaffleCardProps) {
   const isCompleted = raffle.status === 'completed';
   const isActive = raffle.status === 'active';
   const isComingSoon = raffle.status === 'coming_soon';
@@ -67,7 +69,7 @@ export function RaffleCard({ raffle }: RaffleCardProps) {
                 {raffle.contestants.length} Contestants
               </span>
             </div>
-            <div className="bg-white rounded-lg p-4 max-h-60 overflow-y-auto">
+            <div className="bg-white rounded-lg p-4 max-h-60 overflow-y-auto mb-4">
               <div className="space-y-2">
                 {raffle.contestants.map((contestant, idx) => (
                   <div
@@ -84,6 +86,15 @@ export function RaffleCard({ raffle }: RaffleCardProps) {
                 ))}
               </div>
             </div>
+            {canDraw && onStartDraw && (
+              <button
+                onClick={onStartDraw}
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+              >
+                <Play className="w-5 h-5" />
+                Start Raffle Draw
+              </button>
+            )}
           </>
         )}
 
@@ -95,12 +106,21 @@ export function RaffleCard({ raffle }: RaffleCardProps) {
                 Draw Date: {raffle.drawDate.toLocaleDateString()}
               </span>
             </div>
-            <div className="bg-white rounded-lg p-4">
+            <div className="bg-white rounded-lg p-4 mb-4">
               <p className="text-center text-sm text-gray-600 mb-3 font-medium">
                 Time Until Draw
               </p>
               <CountdownTimer targetDate={raffle.drawDate} />
             </div>
+            {canDraw && onStartDraw && new Date() >= raffle.drawDate && (
+              <button
+                onClick={onStartDraw}
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+              >
+                <Play className="w-5 h-5" />
+                Start Raffle Draw
+              </button>
+            )}
           </div>
         )}
       </div>

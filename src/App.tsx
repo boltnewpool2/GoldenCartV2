@@ -1,66 +1,105 @@
+import { useState, useEffect } from 'react';
 import { GoDaddyLogo } from './components/GoDaddyLogo';
 import { WinnersDashboard } from './components/WinnersDashboard';
 import { RaffleCard } from './components/RaffleCard';
-import { RaffleWeek, Winner } from './types/raffle';
+import { RaffleDraw } from './components/RaffleDraw';
+import { RaffleWeek, Winner, Contestant } from './types/raffle';
 import week1Data from './data/week1.json';
 import week2Data from './data/week2.json';
 import week3Data from './data/week3.json';
 
 function App() {
-  const winners: Winner[] = [
-    {
-      name: 'Syed Ala Uddin',
-      supervisor: 'Kalyan',
-      department: 'International Hosting',
-      week: 1,
-      prizeAmount: 300,
-    },
-    {
-      name: 'Dhanraj S',
-      supervisor: 'Srikanth Janga',
-      department: 'International Messaging - Hosting',
-      week: 2,
-      prizeAmount: 300,
-    },
-  ];
+  const [winners, setWinners] = useState<Winner[]>(() => {
+    const stored = localStorage.getItem('raffle_winners');
+    if (stored) {
+      return JSON.parse(stored);
+    }
+    return [
+      {
+        name: 'Syed Ala Uddin',
+        supervisor: 'Kalyan',
+        department: 'International Hosting',
+        week: 1,
+        prizeAmount: 300,
+      },
+      {
+        name: 'Dhanraj S',
+        supervisor: 'Srikanth Janga',
+        department: 'International Messaging - Hosting',
+        week: 2,
+        prizeAmount: 300,
+      },
+    ];
+  });
 
-  const raffles: RaffleWeek[] = [
-    {
-      week: 1,
-      status: 'completed',
-      contestants: week1Data,
-      winner: winners[0],
-    },
-    {
-      week: 2,
-      status: 'completed',
-      contestants: week2Data,
-      winner: winners[1],
-    },
-    {
-      week: 3,
-      status: 'active',
-      contestants: week3Data,
-    },
-    {
-      week: 4,
-      status: 'coming_soon',
-      drawDate: new Date('2025-12-09'),
-      contestants: [],
-    },
-    {
-      week: 5,
-      status: 'coming_soon',
-      drawDate: new Date('2025-12-16'),
-      contestants: [],
-    },
-    {
-      week: 6,
-      status: 'coming_soon',
-      drawDate: new Date('2025-12-23'),
-      contestants: [],
-    },
-  ];
+  const [activeDrawWeek, setActiveDrawWeek] = useState<number | null>(null);
+  const [raffles, setRaffles] = useState<RaffleWeek[]>([]);
+
+  useEffect(() => {
+    const raffleData: RaffleWeek[] = [
+      {
+        week: 1,
+        status: winners.some(w => w.week === 1) ? 'completed' : 'active',
+        contestants: week1Data,
+        winner: winners.find(w => w.week === 1),
+      },
+      {
+        week: 2,
+        status: winners.some(w => w.week === 2) ? 'completed' : 'active',
+        contestants: week2Data,
+        winner: winners.find(w => w.week === 2),
+      },
+      {
+        week: 3,
+        status: winners.some(w => w.week === 3) ? 'completed' : 'active',
+        contestants: week3Data,
+        winner: winners.find(w => w.week === 3),
+      },
+      {
+        week: 4,
+        status: 'coming_soon',
+        drawDate: new Date('2025-12-09'),
+        contestants: [],
+      },
+      {
+        week: 5,
+        status: 'coming_soon',
+        drawDate: new Date('2025-12-16'),
+        contestants: [],
+      },
+      {
+        week: 6,
+        status: 'coming_soon',
+        drawDate: new Date('2025-12-23'),
+        contestants: [],
+      },
+    ];
+    setRaffles(raffleData);
+  }, [winners]);
+
+  useEffect(() => {
+    localStorage.setItem('raffle_winners', JSON.stringify(winners));
+  }, [winners]);
+
+  const handleStartDraw = (week: number) => {
+    setActiveDrawWeek(week);
+  };
+
+  const handleDrawComplete = (winner: Contestant, week: number) => {
+    const newWinner: Winner = {
+      ...winner,
+      week,
+      prizeAmount: 300,
+    };
+    setWinners(prev => [...prev, newWinner]);
+    setActiveDrawWeek(null);
+  };
+
+  const handleDeleteWinner = (week: number) => {
+    setWinners(prev => prev.filter(w => w.week !== week));
+  };
+
+  const currentDraw = raffles.find(r => r.week === activeDrawWeek);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50">
@@ -78,7 +117,7 @@ function App() {
         </header>
 
         <div className="mb-12">
-          <WinnersDashboard winners={winners} />
+          <WinnersDashboard winners={winners} onDeleteWinner={handleDeleteWinner} />
         </div>
 
         <div className="mb-8">
@@ -89,9 +128,23 @@ function App() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {raffles.map((raffle) => (
-            <RaffleCard key={raffle.week} raffle={raffle} />
+            <RaffleCard
+              key={raffle.week}
+              raffle={raffle}
+              canDraw={raffle.contestants.length > 0 && raffle.status !== 'completed'}
+              onStartDraw={() => handleStartDraw(raffle.week)}
+            />
           ))}
         </div>
+
+        {activeDrawWeek && currentDraw && currentDraw.contestants.length > 0 && (
+          <RaffleDraw
+            contestants={currentDraw.contestants}
+            week={activeDrawWeek}
+            onComplete={(winner) => handleDrawComplete(winner, activeDrawWeek)}
+            onClose={() => setActiveDrawWeek(null)}
+          />
+        )}
 
         <footer className="mt-16 text-center text-gray-600">
           <p className="text-sm">

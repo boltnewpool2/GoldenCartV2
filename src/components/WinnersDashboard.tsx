@@ -1,11 +1,15 @@
-import { Trophy } from 'lucide-react';
+import { useState } from 'react';
+import { Trophy, Trash2 } from 'lucide-react';
 import { Winner } from '../types/raffle';
+import { DeleteWinnerModal } from './DeleteWinnerModal';
 
 interface WinnersDashboardProps {
   winners: Winner[];
+  onDeleteWinner?: (week: number) => void;
 }
 
-export function WinnersDashboard({ winners }: WinnersDashboardProps) {
+export function WinnersDashboard({ winners, onDeleteWinner }: WinnersDashboardProps) {
+  const [deleteModal, setDeleteModal] = useState<{ week: number; name: string } | null>(null);
   return (
     <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-2xl shadow-xl p-8 border-2 border-amber-200">
       <div className="flex items-center gap-3 mb-6">
@@ -39,11 +43,35 @@ export function WinnersDashboard({ winners }: WinnersDashboardProps) {
                   <span className="font-medium">Department:</span> {winner.department}
                 </p>
               </div>
-              <Trophy className="w-12 h-12 text-amber-500" />
+              <div className="flex items-center gap-3">
+                <Trophy className="w-12 h-12 text-amber-500" />
+                {onDeleteWinner && (
+                  <button
+                    onClick={() => setDeleteModal({ week: winner.week, name: winner.name })}
+                    className="text-red-500 hover:text-red-700 transition-colors p-2 hover:bg-red-50 rounded-lg"
+                    title="Delete Winner"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         ))}
       </div>
+
+      {deleteModal && (
+        <DeleteWinnerModal
+          winnerName={deleteModal.name}
+          week={deleteModal.week}
+          onConfirm={() => {
+            if (onDeleteWinner) {
+              onDeleteWinner(deleteModal.week);
+            }
+          }}
+          onClose={() => setDeleteModal(null)}
+        />
+      )}
     </div>
   );
 }
